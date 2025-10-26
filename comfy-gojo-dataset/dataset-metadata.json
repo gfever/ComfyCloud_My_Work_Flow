@@ -1,0 +1,9 @@
+{
+  "title": "ComfyGojo — notebook + prompts",
+  "id": "noxfvr/comfy-gojo-dataset",
+  "subtitle": "Notebook for AnimateDiff-based Gojo animation + default prompts",
+  "description": "Contains the notebook `kaggle_simple_cells_v4_clean.ipynb` and a default `prompts.json` with preset prompts for quick runs in Kaggle.",
+  "licenses": [
+    { "name": "CC0-1.0" }
+  ]
+}
