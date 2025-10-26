@@ -1,0 +1,7 @@
+{
+  "BASE_PROMPT": "cinematic portrait of gojo satoru, white spiky hair, black blindfold, confident expression, anime style, highly detailed, 8k, professional lighting",
+  "MOTION_PROMPT": "turning head, hair flowing, smooth motion",
+  "EXTRA_PROMPT": "dramatic rim lighting, soft bloom, depth of field",
+  "NEGATIVE_PROMPT": "blurry, deformed, low quality, watermark, text, bad anatomy, multiple heads, duplicate"
+}
+
