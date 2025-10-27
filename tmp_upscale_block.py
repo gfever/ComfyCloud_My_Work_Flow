@@ -134,13 +134,15 @@ if os.path.exists(upscale_model):
                             shim_path = os.path.join(os.getcwd(), 'inference_with_torchvision_shim.py')
                             with open(shim_path, 'w', encoding='utf-8') as sf:
                                 shim_lines = [
-                                    "import sys, types",
+                                    "import sys, types, os, re",
+                                    "# Provide torchvision.transforms.functional_tensor shim when missing",
                                     "try:",
                                     "    import torchvision.transforms.functional_tensor as ft",
                                     "except Exception:",
                                     "    try:",
                                     "        import torchvision.transforms.functional as f",
                                     "        mod = types.ModuleType('torchvision.transforms.functional_tensor')",
+                                    "        # copy a few commonly-used functions if present",
                                     "        if hasattr(f, 'rgb_to_grayscale'):",
                                     "            mod.rgb_to_grayscale = f.rgb_to_grayscale",
                                     "        if hasattr(f, 'convert_image_dtype'):",
@@ -149,9 +151,34 @@ if os.path.exists(upscale_model):
                                     "    except Exception:",
                                     "        pass",
                                     "",
-                                    "# forward to the original script",
-                                    "import runpy",
-                                    "runpy.run_path('inference_realesrgan.py', run_name='__main__')",
+                                    "# Helper: infer numeric scale (e.g. '4x-UltraSharp' -> 4) from argv",
+                                    "def _infer_netscale(argv):",
+                                    "    # argv is a list of command-line args (no program name)",
+                                    "    for i, a in enumerate(argv):",
+                                    "        # check flags that accept a model name (common Real-ESRGAN uses '-n')",
+                                    "        if a in ('-n','--name','--model') and i+1 < len(argv):",
+                                    "            m = re.match(r'(\\d+)x', argv[i+1])",
+                                    "            if m:",
+                                    "                return int(m.group(1))",
+                                    "    # attempt to find direct --scale/-s",
+                                    "    for i, a in enumerate(argv):",
+                                    "        if a in ('-s','--scale') and i+1 < len(argv):",
+                                    "            try:",
+                                    "                return int(argv[i+1])",
+                                    "            except Exception:",
+                                    "                pass",
+                                    "    # fallback default",
+                                    "    return 4",
+                                    "",
+                                    "# compute netscale from sys.argv (exclude program name)",
+                                    "netscale = _infer_netscale(sys.argv[1:])",
+                                    "",
+                                    "# Execute the original script in a prepared __main__ namespace so it sees 'netscale'",
+                                    "script_path = os.path.join(os.getcwd(), 'inference_realesrgan.py')",
+                                    "with open(script_path, 'r', encoding='utf-8') as _f:",
+                                    "    _code = _f.read()",
+                                    "_globals = {'__name__': '__main__', '__file__': script_path, 'netscale': netscale}",
+                                    "exec(compile(_code, script_path, 'exec'), _globals)",
                                 ]
                                 sf.write('\n'.join(shim_lines) + '\n')
 
@@ -283,4 +310,3 @@ else:
         print("   Или поместите модель в папку вашего датасета и установите DATASET_DIR в начале ноутбука, например:")
         print("     DATASET_DIR = '/kaggle/input/comfyui-models-gojo'")
         print("   После размещения модели перезапустите kernel и выполните ячейки заново.")
-
