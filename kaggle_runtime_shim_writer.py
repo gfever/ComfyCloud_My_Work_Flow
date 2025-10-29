@@ -1,4 +1,20 @@
+"""Write a clean, indentation-safe Real-ESRGAN shim file suitable for Kaggle runtime.
 
+Usage (from notebook or terminal):
+    from kaggle_runtime_shim_writer import write_shim
+    write_shim('/kaggle/working/Real-ESRGAN/inference_with_shim_full.py')
+
+Or run as a script:
+    python3 kaggle_runtime_shim_writer.py --out /kaggle/working/Real-ESRGAN/inference_with_shim_full.py
+
+The script writes a sanitized shim that avoids fragile manual indentation and uses textwrap.dedent
+so newlines/indentation are stable when written into the Kaggle working directory.
+"""
+import argparse
+import os
+import textwrap
+
+SHIM = textwrap.dedent(r"""
 import sys
 import os
 import types
@@ -104,3 +120,32 @@ if __name__ == '__main__':
         _globals['sys'] = sys
         sys.argv = [script_path] + argv
         exec(compile(_code, script_path, 'exec'), _globals)
+""")
+
+
+def write_shim(out_path: str):
+    """Write the predefined SHIM content to out_path, creating parent dirs as needed."""
+    out_path = os.fspath(out_path)
+    d = os.path.dirname(out_path)
+    if d and not os.path.exists(d):
+        os.makedirs(d, exist_ok=True)
+    with open(out_path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(SHIM)
+    return out_path
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('--out', '-o', default='inference_with_shim_full.py', help='Output path for shim file')
+    args = p.parse_args()
+    outp = args.out
+    try:
+        write_shim(outp)
+        print('Wrote shim to', outp)
+    except Exception as e:
+        print('Failed to write shim to', outp, ':', e)
+
+
+if __name__ == '__main__':
+    main()
+
